@@ -7,7 +7,9 @@ void startAdv(void)
 
   Bluefruit.Advertising.addService(ErrorService, PPG86Service, IMUService, TensorFlowService);
   Bluefruit.Advertising.addService(TempService);
-  
+  Bluefruit.Advertising.addService(hrms);
+
+
   // Include Name
   Bluefruit.Advertising.addName();
 

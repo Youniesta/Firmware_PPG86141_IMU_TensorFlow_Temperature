@@ -9,11 +9,10 @@ float sensor_Temp;
 
 uint32_t bufTemp[9];
 uint64_t bufSix_Nine_RAM;
-//unsigned char* buffData;
 uint8_t* buffData;
 
 void configureTemp() {
-    Serial.println("####  TEMPERATURE CONFIG ###");
+  Serial.println("####  TEMPERATURE CONFIG ####");
   Serial.println("Protocentral MLX90632 Read Data");
   Wire.begin();
   ReadSensor.begin();
@@ -26,20 +25,21 @@ void configureTemp() {
   P_R1 = (double)tempBuff32[0] * pow(2, -8);
   P_T1 = (double)tempBuff32[2] * pow(2, -44);
 
-
   if (ReadSensor.begin() == true) {
 
     Serial.println("Communication success with the sensor");
+    errorTemp = false;
+
   }
   else {
     Serial.println("Communication failure with the sensor");
-    errorTemp = true;
   }
+  Serial.println();
+
 }
 
 void updateTemp() {
-  //sensor_Temp = ReadSensor.getSensorTemp(); //Get the temperature of the sensor
-  //
+
   if (ReadSensor.dataAvailable() == true) {
     ReadSensor.tempBuff();
     tempBuff32[5] = ReadSensor.buff[5];
@@ -62,6 +62,8 @@ void updateTemp() {
     Serial.println("Data not available");
   }
 #ifdef debugTemp1
+  Serial.println("----- Temperature data ----- :");
+
   uint32_t sixRAM = tempBuff32[5];
   uint32_t nineRAM = tempBuff32[6];
   double VRta =  nineRAM + Gb1 * ( sixRAM / 12.0);
@@ -103,4 +105,6 @@ void updateTemp() {
     Serial.println(" P_G1 "+String(P_G1));
     Serial.println(" P_R1 "+String(P_R1));
     Serial.println(" P_T1 "+String(P_T1));*/
+  Serial.println();
+
 }

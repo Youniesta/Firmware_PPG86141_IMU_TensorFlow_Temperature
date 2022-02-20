@@ -1,15 +1,12 @@
 #include <MPU9250_asukiaaa.h>
 MPU9250_asukiaaa mySensor(0x69);
-//float aX, aY, aSqrt, gX, gY, gZ, mDirection, mX, mY, mZ;
-uint32_t  aX, aY, aZ;
-float aX2, aY2, aZ2, gX2, gY2, gZ2;
+
+float aX, aY, aZ, gX, gY, gZ, mX, mY, mZ;
 uint8_t*  accelBuf;
 uint8_t*  gyroBuf;
 uint8_t*  magBuf;
 uint8_t   accScale = 16;
-uint8_t   gyroScale = 2000;
-
-//bool dataReady = false;
+int   gyroScale = 2000;
 
 float accelRange = 16.0;
 
@@ -17,30 +14,35 @@ uint8_t bufAcc[11];
 uint8_t bufGyro[11];
 uint8_t bufMag[10];
 
-uint8_t bufAcc_Gy_Ma[32];
 /*Debug Modes*/
-//#define debugAcc1;
-//#define debugAcc2;
+#define debugAcc1
+#define debugGyr
+#define debugMag
+//#define debugAcc2
 
 void configureIMU() {
 
-  Serial.println("####  IMU CONFIG ###");
+  Serial.println("####  IMU CONFIG ####");
   /*Read sensorId*/
   uint8_t sensorId;
 
   if (mySensor.readId(&sensorId) == 0) {
+    Serial.println("MPU9250 connection succeeded !");
     Serial.println("sensorId: " + String(sensorId));
+    errorIMU = false;
   }
   else {
     Serial.println("Error cannot read sensor ID");
-    errorIMU = true;
   }
+
   /*Begin IMU*/
   if (!errorIMU) {
     mySensor.beginAccel();
     mySensor.beginGyro();
     mySensor.beginMag();
   }
+  Serial.println();
+
 }
 void updateAcc() {
   if (mySensor.accelUpdate() == 0) {
@@ -54,19 +56,9 @@ void updateAcc() {
     bufAcc[0] = (uint8_t)(timestamp >>= 8);
     bufAcc[4] = 16;
 
-    /////////////////////////////////
-    bufAcc_Gy_Ma[3] = (uint8_t)timestamp;
-    bufAcc_Gy_Ma[2] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[1] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[0] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[4] = 16;
-    /////////////////////////////////
-
     for (int i = 5; i <= 10; i++) {
       bufAcc[i] = accelBuf[i - 5];
-      /////////////////////////////
-      bufAcc_Gy_Ma[i] = accelBuf[i - 5];
-      /////////////////////////////
+
 #ifdef debugAcc2
       Serial.print(String(i));
       Serial.print(":");
@@ -74,24 +66,28 @@ void updateAcc() {
       Serial.print(" ");
 #endif
     }
-      int16_t v = ((int16_t) accelBuf[0]) << 8 | accelBuf[1];
-    aX2 = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
+
+    int16_t v = ((int16_t) accelBuf[0]) << 8 | accelBuf[1];
+    aX = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
 
     v = ((int16_t) accelBuf[2]) << 8 | accelBuf[3];
-    aY2 = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
+    aY = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
 
     v = ((int16_t) accelBuf[4]) << 8 | accelBuf[5];
-    aZ2 = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
+    aZ = ((float) - v) * accelRange / (float) 0x8000; // (float) 0x8000 == 32768.0
+
 #ifdef debugAcc1
-    Serial.print(String(aX2));
+    Serial.println("----- Accelerometer data ----- :");
+    Serial.print(String(aX));
     Serial.print(" ");
-    Serial.print(String(aY2));
+    Serial.print(String(aY));
     Serial.print(" ");
-    Serial.print(String(aZ2));
+    Serial.print(String(aZ));
     Serial.println(" ");
 #endif
-   // dataReady = true;
-  } else {
+
+  }
+  else {
     Serial.println("Cannot read accel values");
   }
 }
@@ -103,38 +99,37 @@ void updateGyro() {
     bufGyro[2] = (uint8_t)(timestamp >>= 8);
     bufGyro[1] = (uint8_t)(timestamp >>= 8);
     bufGyro[0] = (uint8_t)(timestamp >>= 8);
-    bufGyro[4] = 2000;
-    //////////////////////////////
-    bufAcc_Gy_Ma[14] = (uint8_t)timestamp;
-    bufAcc_Gy_Ma[13] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[12] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[11] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[15] = 2000;
-
-    for (int i = 16; i <= 21; i++) {
-      bufAcc_Gy_Ma[i] = gyroBuf[i - 16];
-    }
-    ///////////////////////////////
+    //bufGyro[4] = 2000;
+    bufGyro[4] = 16;
 
     for (int i = 5; i <= 10; i++) {
       bufGyro[i] = gyroBuf[i - 5];
     }
 
-
     int16_t v = ((int16_t) gyroBuf[0]) << 8 | gyroBuf[1];
+    gX = ((float) - v) * gyroScale / (float) 0x8000;
 
-    gX2 = ((float) - v) * gyroScale / (float) 0x8000;
-    //Serial.println("gX2: "+String(gX2));
     v = ((int16_t) gyroBuf[2]) << 8 | gyroBuf[3];
-    gY2 = ((float) - v) * gyroScale / (float) 0x8000;
-    //Serial.println("gY2: "+String(gY2));
+    gY = ((float) - v) * gyroScale / (float) 0x8000;
+
     v = ((int16_t) gyroBuf[4]) << 8 | gyroBuf[5];
-    gZ2 = ((float) - v) * gyroScale / (float) 0x8000;
-    //Serial.println("gZ2: "+String(gZ2));
+    gZ = ((float) - v) * gyroScale / (float) 0x8000;
+
+#ifdef debugGyr
+    Serial.println("----- Gyrometer data ----- :");
+    Serial.print(String(gX));
+    Serial.print(" ");
+    Serial.print(String(gY));
+    Serial.print(" ");
+    Serial.print(String(gZ));
+    Serial.println(" ");
+#endif
+
   } else {
     Serial.println("Cannod read accel values");
   }
 }
+
 void updateMag() {
   if (mySensor.magUpdate() == 0) {
     magBuf = mySensor.magBuff;
@@ -144,24 +139,33 @@ void updateMag() {
     bufMag[1] = (uint8_t)(timestamp >>= 8);
     bufMag[0] = (uint8_t)(timestamp >>= 8);
 
-    //////////////////////////////
-    bufAcc_Gy_Ma[25] = (uint8_t)timestamp;
-    bufAcc_Gy_Ma[24] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[23] = (uint8_t)(timestamp >>= 8);
-    bufAcc_Gy_Ma[22] = (uint8_t)(timestamp >>= 8);
-
-    for (int i = 26; i <= 31; i++) {
-      bufAcc_Gy_Ma[i] = magBuf[i - 26];
-    }
-    /////////////////////////////
     for (int i = 4; i <= 9; i++) {
       bufMag[i] = magBuf[i - 4];
-#ifdef debugMag
-      Serial.println(String(bufMag[i]));
-#endif
     }
+
+    int16_t v = ((int16_t) magBuf[1]) << 8 | magBuf[0];
+    mX = ((float) v);
+
+    v = ((int16_t) magBuf[3]) << 8 | magBuf[2];
+    mY = ((float) v);
+
+    v = ((int16_t) magBuf[5]) << 8 | magBuf[4];
+    mZ = ((float) v);
+
+#ifdef debugMag
+    Serial.println("----- Magnetometer data ----- :");
+    Serial.print(String(mX));
+    Serial.print(" ");
+    Serial.print(String(mY));
+    Serial.print(" ");
+    Serial.print(String(mZ));
+    Serial.println(" ");
+#endif
+
 
   } else {
     Serial.println("Cannod read accel values");
   }
+  Serial.println();
+
 }

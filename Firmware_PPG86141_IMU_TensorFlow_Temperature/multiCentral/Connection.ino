@@ -17,6 +17,8 @@ void scan_callback(ble_gap_evt_adv_report_t* report)
 void connect_callback(uint16_t conn_handle)
 {
   Serial.println("Connected");
+  Serial.println();
+  Serial.println("##############################");
   Serial.print("Discovering Error Service ... ");
 
   // If ErrorService is not found, disconnect and return
@@ -29,6 +31,7 @@ void connect_callback(uint16_t conn_handle)
   }
   // Once Error service is found, we continue to discover its characteristic
   Serial.println("Found error service");
+  Serial.println();
   Serial.print("Discovering error characteristic ... ");
   if ( !ErrorCharacteristic.discover() )
   {
@@ -48,8 +51,12 @@ void connect_callback(uint16_t conn_handle)
   {
     Serial.println("Couldn't enable notify for C1 Measurement. Increase DEBUG LEVEL for troubleshooting");
   }
+    Serial.println("##############################");
+
 
 #ifdef IMU9250
+  Serial.println();
+  Serial.println("##############################");
   Serial.print("Discovering IMU Service ... ");
 
   if ( !IMUService.discover(conn_handle) )
@@ -117,10 +124,14 @@ void connect_callback(uint16_t conn_handle)
   {
     Serial.println("Couldn't enable notify GyroCharacteristic. Increase DEBUG LEVEL for troubleshooting");
   }
+    Serial.println("##############################");
+
 #endif
 
 #ifdef PPG_Max86141
   /**/
+  Serial.println();
+  Serial.println("##############################");
   Serial.println("Discovering PPG 86 service");
   if ( !PPG86Service.discover(conn_handle) )
   {
@@ -149,6 +160,25 @@ void connect_callback(uint16_t conn_handle)
   else
   {
     Serial.println("Couldn't enable notify ledSeq1A_PPG1Characteristic2 characteristic. Increase DEBUG LEVEL for troubleshooting");
+  }
+
+    if ( !ledSeq1A_PPG2Characteristic2.discover() )
+  {
+    // Measurement chr is mandatory, if it is not found (valid), then disconnect
+    Serial.println("ledSeq1A_PPG2Characteristic2 characteristic not found !!!");
+    Bluefruit.disconnect(conn_handle);
+    return;
+  }
+  Serial.println("ledSeq1A_PPG2Characteristic2 characteristic found");
+  delay(20);
+  // Reaching here means we are ready to go, let's enable notification on measurement chr
+  if (ledSeq1A_PPG2Characteristic2.enableNotify() )
+  {
+    Serial.println("Ready to receive ledSeq1A_PPG2Characteristic2 characteristic data");
+  }
+  else
+  {
+    Serial.println("Couldn't enable notify ledSeq1A_PPG2Characteristic2 characteristic. Increase DEBUG LEVEL for troubleshooting");
   }
 
   if ( !SNR1_2_Characteristic2.discover() )
@@ -188,11 +218,15 @@ void connect_callback(uint16_t conn_handle)
   {
     Serial.println("Couldn't enable notify SNR2_2_Characteristic2 characteristic. Increase DEBUG LEVEL for troubleshooting");
   }
+    Serial.println("##############################");
+
   //////////////////////////////////////////////////////////////////
 #endif
 
 #ifdef Temperature
   /**/
+    Serial.println();
+    Serial.println("##############################");
     Serial.println("Discovering Temperature service");
 
   if ( !TempService.discover(conn_handle) )
@@ -220,10 +254,14 @@ void connect_callback(uint16_t conn_handle)
   {
     Serial.println("Couldn't enable notify TempCharacteristic characteristic. Increase DEBUG LEVEL for troubleshooting");
   }
+    Serial.println("##############################");
+
 #endif
 
 #ifdef TensorFlow
   /**/
+    Serial.println();
+    Serial.println("##############################");
     Serial.println("Discovering TensorFlow service");
 
   if ( !TensorFlowService.discover(conn_handle) )
@@ -251,6 +289,8 @@ void connect_callback(uint16_t conn_handle)
   {
     Serial.println("Couldn't enable notify PossCharacteristic characteristic. Increase DEBUG LEVEL for troubleshooting");
   }
+    Serial.println("##############################");
+    Serial.println();
 #endif
 
 }
